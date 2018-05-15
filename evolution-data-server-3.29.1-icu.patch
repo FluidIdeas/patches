@@ -1,0 +1,33 @@
+diff -Naur a/src/libedataserver/e-alphabet-index-private.cpp b/src/libedataserver/e-alphabet-index-private.cpp
+--- a/src/libedataserver/e-alphabet-index-private.cpp	2018-04-16 13:58:36.000000000 +0530
++++ b/src/libedataserver/e-alphabet-index-private.cpp	2018-05-01 13:11:26.204235598 +0530
+@@ -76,7 +76,7 @@
+ 				 const gchar     *word)
+ {
+ 	UErrorCode status = U_ZERO_ERROR;
+-	UnicodeString string;
++	icu::UnicodeString string;
+ 	gint index;
+ 
+ 	g_return_val_if_fail (alphabet_index != NULL, -1);
+@@ -129,7 +129,7 @@
+ 
+ 	for (i = 0; alphabet_index->priv->nextBucket (status); i++) {
+ 		UAlphabeticIndexLabelType label_type;
+-		UnicodeString ustring;
++		icu::UnicodeString ustring;
+ 		std::string string;
+ 
+ 		label_type = alphabet_index->priv->getBucketLabelType ();
+diff -Naur a/src/libedataserver/e-transliterator-private.cpp b/src/libedataserver/e-transliterator-private.cpp
+--- a/src/libedataserver/e-transliterator-private.cpp	2018-04-16 13:58:36.000000000 +0530
++++ b/src/libedataserver/e-transliterator-private.cpp	2018-05-01 13:11:47.364655945 +0530
+@@ -74,7 +74,7 @@
+ _e_transliterator_cxx_transliterate (ETransliterator  *transliterator,
+ 				     const gchar      *str)
+ {
+-	UnicodeString transform;
++	icu::UnicodeString transform;
+ 	std::string sourceUTF8;
+ 	std::string targetUTF8;
+ 

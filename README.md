@@ -1,3 +1,1 @@
-# README #
-
-Patches for AryaLinux packages
+# patches
