@@ -1,0 +1,35 @@
+--- /usr/include/p11-kit-1/p11-kit/uri.h.bak	2018-05-31 22:25:09.190747370 +0530
++++ /usr/include/p11-kit-1/p11-kit/uri.h	2018-05-31 22:27:28.576494409 +0530
+@@ -96,12 +96,12 @@
+ CK_INFO_PTR         p11_kit_uri_get_module_info             (P11KitUri *uri);
+ 
+ int                 p11_kit_uri_match_module_info           (const P11KitUri *uri,
+-                                                             const CK_INFO *info);
++                                                             const struct ck_info *info);
+ 
+ CK_SLOT_INFO_PTR    p11_kit_uri_get_slot_info               (P11KitUri *uri);
+ 
+ int                 p11_kit_uri_match_slot_info             (const P11KitUri *uri,
+-                                                             const CK_SLOT_INFO *slot_info);
++                                                             const struct ck_slot_info *slot_info);
+ 
+ CK_SLOT_ID          p11_kit_uri_get_slot_id                 (P11KitUri *uri);
+ void                p11_kit_uri_set_slot_id                 (P11KitUri *uri,
+@@ -110,7 +110,7 @@
+ CK_TOKEN_INFO_PTR   p11_kit_uri_get_token_info              (P11KitUri *uri);
+ 
+ int                 p11_kit_uri_match_token_info            (const P11KitUri *uri,
+-                                                             const CK_TOKEN_INFO *token_info);
++                                                             const struct ck_token_info *token_info);
+ 
+ CK_ATTRIBUTE_PTR    p11_kit_uri_get_attribute               (P11KitUri *uri,
+                                                              CK_ATTRIBUTE_TYPE attr_type);
+@@ -131,7 +131,7 @@
+ void                p11_kit_uri_clear_attributes            (P11KitUri *uri);
+ 
+ int                 p11_kit_uri_match_attributes            (const P11KitUri *uri,
+-                                                             const CK_ATTRIBUTE *attrs,
++                                                             const struct ck_attribute *attrs,
+                                                              CK_ULONG n_attrs);
+ 
+ const char*         p11_kit_uri_get_pin_value               (const P11KitUri *uri);
