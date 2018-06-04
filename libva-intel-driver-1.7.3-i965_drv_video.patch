@@ -1,0 +1,18 @@
+diff -Naur a/src/i965_drv_video.c b/src/i965_drv_video.c
+--- a/src/i965_drv_video.c	2016-11-10 06:07:13.000000000 +0530
++++ b/src/i965_drv_video.c	2018-06-04 11:34:14.883861974 +0530
+@@ -1000,12 +1000,12 @@
+                     if(entrypoint == VAEntrypointEncSliceLP) {
+                         roi_config->bits.num_roi_regions = 3;
+                         roi_config->bits.roi_rc_priority_support = 0;
+-                        roi_config->bits.roi_rc_qp_delat_support = 0;
++                        roi_config->bits.roi_rc_qp_delta_support = 0;
+                     } else {
+                         roi_config->bits.num_roi_regions =
+                             I965_MAX_NUM_ROI_REGIONS;
+                         roi_config->bits.roi_rc_priority_support = 0;
+-                        roi_config->bits.roi_rc_qp_delat_support = 1;
++                        roi_config->bits.roi_rc_qp_delta_support = 1;
+                     }
+                 }else {
+                     attrib_list[i].value = 0;
