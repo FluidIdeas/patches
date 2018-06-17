@@ -1,0 +1,51 @@
+diff -Naur a/Make.defaults b/Make.defaults
+--- a/Make.defaults	2018-04-10 02:08:51.000000000 +0530
++++ b/Make.defaults	2018-06-17 07:06:21.544478138 +0530
+@@ -10,10 +10,8 @@
+ PCDIR	?= $(libdir)/pkgconfig
+ DESTDIR	?=
+ 
+-EFIDIR	?= $(shell x=$$(which --skip-alias --skip-functions git 2>/dev/null) ; [ -n "$$x" ] && git config --get efibootmgr.efidir)
+-ifeq ($(EFIDIR),)
+-        EFIDIR_ERROR = $(error EFIDIR or .gitconfig efibootmgr.efidir must be set to this distro's reserved EFI System Partition subdirectory name)
+-endif
++OS_VENDOR := aryalinux
++
+ EFI_LOADER := grub.efi
+ 
+ INSTALL ?= install
+@@ -36,7 +34,7 @@
+ 	-std=gnu11 -fPIC \
+ 	-D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -DLOCALEDIR=\"$(localedir)\" \
+ 	-DEFIBOOTMGR_VERSION="\"$(VERSION)\"" \
+-	-DDEFAULT_LOADER=\"\\\\EFI\\\\$(EFIDIR)\\\\$(EFI_LOADER)\" \
++	-DDEFAULT_LOADER=\"\\\\EFI\\\\$(OS_VENDOR)\\\\$(EFI_LOADER)\" \
+ 	$(if $(findstring clang,$(CC)),$(clang_cflags),) \
+ 	$(if $(findstring gcc,$(CC)),$(gcc_cflags),) \
+ 	$(call pkg-config-cflags)
+@@ -52,7 +50,4 @@
+ SOFLAGS=-shared
+ LDLIBS=$(foreach lib,$(LIBS),-l$(lib)) $(call pkg-config-ldlibs)
+ 
+-.PHONY: check_efidir_error
+-check_efidir_error : ; $(EFIDIR_ERROR) $(info Building with EFIDIR as $(EFIDIR))
+-
+ COMMIT_ID=$(shell git log -1 --pretty=%H 2>/dev/null || echo master)
+diff -Naur a/Makefile b/Makefile
+--- a/Makefile	2018-04-10 02:08:51.000000000 +0530
++++ b/Makefile	2018-06-17 07:06:58.049651169 +0530
+@@ -8,12 +8,12 @@
+ 
+ SUBDIRS := src
+ 
+-all install deps : | check_efidir_error Make.version
++all install deps : | Make.version
+ 	@set -e ; for x in $(SUBDIRS) ; do \
+ 		$(MAKE) -C $$x $@ ; \
+ 	done
+ 
+-clean : | check_efidir_error Make.version
++clean : | Make.version
+ 	@set -e ; for x in $(SUBDIRS) ; do \
+ 		$(MAKE) -C $$x $@ ; \
+ 	done
