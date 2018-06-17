@@ -1,0 +1,26 @@
+diff -Naur a/postinstall.py b/postinstall.py
+--- a/postinstall.py	2018-03-13 00:22:58.000000000 +0530
++++ b/postinstall.py	2018-06-17 20:54:05.212750294 +0530
+@@ -8,19 +8,19 @@
+ 
+ # Packaging tools define DESTDIR and this isn't needed for them
+ if 'DESTDIR' not in os.environ:
+-    print('Updating icon cache…')
++    print('Updating icon cache...')
+     icon_cache_dir = os.path.join(datadir, 'icons', 'hicolor')
+     if not os.path.exists(icon_cache_dir):
+         os.makedirs(icon_cache_dir)
+     subprocess.call(['gtk-update-icon-cache', '-qtf', icon_cache_dir])
+ 
+-    print('Updating desktop database…')
++    print('Updating desktop database...')
+     desktop_database_dir = os.path.join(datadir, 'applications')
+     if not os.path.exists(desktop_database_dir):
+         os.makedirs(desktop_database_dir)
+     subprocess.call(['update-desktop-database', '-q', desktop_database_dir])
+ 
+-    print('Compiling GSettings schemas…')
++    print('Compiling GSettings schemas...')
+     schemas_dir = os.path.join(datadir, 'glib-2.0', 'schemas')
+     if not os.path.exists(schemas_dir):
+         os.makedirs(schemas_dir)
