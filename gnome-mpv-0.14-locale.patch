@@ -1,0 +1,41 @@
+diff --git a/src/gmpv_application.c b/src/gmpv_application.c
+index 5953c58..16f65a3 100644
+--- a/src/gmpv_application.c
++++ b/src/gmpv_application.c
+@@ -21,7 +21,6 @@
+ #include <glib/gprintf.h>
+ #include <glib-unix.h>
+ #include <gio/gio.h>
+-#include <locale.h>
+ 
+ #include "gmpv_application.h"
+ #include "gmpv_controller.h"
+@@ -330,7 +329,6 @@ static gint command_line_handler(	GApplication *gapp,
+ 
+ static void startup_handler(GApplication *gapp, gpointer data)
+ {
+-	setlocale(LC_NUMERIC, "C");
+ 	g_set_application_name(_("GNOME MPV"));
+ 	gtk_window_set_default_icon_name(ICON_NAME);
+ 
+diff --git a/src/gmpv_mpv.c b/src/gmpv_mpv.c
+index bdbcd21..268cb50 100644
+--- a/src/gmpv_mpv.c
++++ b/src/gmpv_mpv.c
+@@ -20,6 +20,7 @@
+ #include <gio/gio.h>
+ #include <gtk/gtk.h>
+ #include <stdio.h>
++#include <locale.h>
+ #include <unistd.h>
+ #include <glib-object.h>
+ #include <glib/gi18n.h>
+@@ -569,6 +570,8 @@ static void gmpv_mpv_init(GmpvMpv *mpv)
+ {
+ 	GmpvMpvPrivate *priv = get_private(mpv);
+ 
++	setlocale(LC_NUMERIC, "C");
++
+ 	priv->mpv_ctx = mpv_create();
+ 	priv->opengl_ctx = NULL;
+ 	priv->ready = FALSE;
