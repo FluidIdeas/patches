@@ -1,0 +1,12 @@
+diff -Naur a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
+--- a/grub-core/Makefile.core.def	2018-10-21 13:48:05.684265211 +0530
++++ b/grub-core/Makefile.core.def	2018-10-21 13:50:40.247124293 +0530
+@@ -91,7 +91,7 @@
+   emu_cflags = '$(CFLAGS_GNULIB)';
+   emu_cppflags = '$(CPPFLAGS_GNULIB)';
+   arm_uboot_ldflags       = '-Wl,-r,-d';
+-  arm_uboot_stripflags    = '--strip-unneeded -K start -R .note -R .comment -R .note.gnu.gold-version';
++  arm_uboot_stripflags    = '--strip-unneeded -K start -R .note -R .comment -R .note.gnu.gold-version -R .eh_frame';
+ 
+   i386_pc_startup = kern/i386/pc/startup.S;
+   i386_efi_startup = kern/i386/efi/startup.S;
