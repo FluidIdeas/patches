@@ -1,0 +1,10 @@
+--- ./layout/gnome-applications.menu	2019-01-18 20:23:06.000000000 +0530
++++ /home/aryalinux/gnome-applications.menu	2019-01-26 21:10:01.141048829 +0530
+@@ -126,6 +126,7 @@
+     <Exclude>
+       <!-- Utilities exclusions -->
+       <Filename>vinagre.desktop</Filename>
++    </Exclude>
+   </Menu>   <!-- End Internet -->
+ 
+   <!-- Web Applications -->
