@@ -1,0 +1,45 @@
+diff -Naur linux-5.0.a/fs/aufs/branch.c linux-5.0.b/fs/aufs/branch.c
+--- linux-5.0.a/fs/aufs/branch.c	2019-01-05 23:01:03.000000000 +0530
++++ linux-5.0.b/fs/aufs/branch.c	2019-03-09 23:02:38.125367700 +0530
+@@ -1127,7 +1127,7 @@
+ 
+ 	err = copy_from_user(&ibusy, arg, sizeof(ibusy));
+ 	if (!err)
+-		err = !access_ok(VERIFY_WRITE, &arg->h_ino, sizeof(arg->h_ino));
++		err = !access_ok(&arg->h_ino, sizeof(arg->h_ino));
+ 	if (unlikely(err)) {
+ 		err = -EFAULT;
+ 		AuTraceErr(err);
+diff -Naur linux-5.0.a/fs/aufs/mvdown.c linux-5.0.b/fs/aufs/mvdown.c
+--- linux-5.0.a/fs/aufs/mvdown.c	2019-01-05 23:01:03.000000000 +0530
++++ linux-5.0.b/fs/aufs/mvdown.c	2019-03-09 23:02:38.125367700 +0530
+@@ -643,7 +643,7 @@
+ 
+ 	err = copy_from_user(&args->mvdown, uarg, sizeof(args->mvdown));
+ 	if (!err)
+-		err = !access_ok(VERIFY_WRITE, uarg, sizeof(*uarg));
++		err = !access_ok(uarg, sizeof(*uarg));
+ 	if (unlikely(err)) {
+ 		err = -EFAULT;
+ 		AuTraceErr(err);
+diff -Naur linux-5.0.a/fs/aufs/rdu.c linux-5.0.b/fs/aufs/rdu.c
+--- linux-5.0.a/fs/aufs/rdu.c	2018-10-20 22:38:47.000000000 +0530
++++ linux-5.0.b/fs/aufs/rdu.c	2019-03-09 23:02:38.125367700 +0530
+@@ -134,7 +134,7 @@
+ 	struct file *h_file;
+ 	struct au_rdu_cookie *cookie = &rdu->cookie;
+ 
+-	err = !access_ok(VERIFY_WRITE, rdu->ent.e, rdu->sz);
++	err = !access_ok(rdu->ent.e, rdu->sz);
+ 	if (unlikely(err)) {
+ 		err = -EFAULT;
+ 		AuTraceErr(err);
+@@ -240,7 +240,7 @@
+ 		/* unnecessary to support mmap_sem since this is a dir */
+ 		err = copy_from_user(&ent, u->e, sizeof(ent));
+ 		if (!err)
+-			err = !access_ok(VERIFY_WRITE, &u->e->ino, sizeof(ino));
++			err = !access_ok(&u->e->ino, sizeof(ino));
+ 		if (unlikely(err)) {
+ 			err = -EFAULT;
+ 			AuTraceErr(err);
