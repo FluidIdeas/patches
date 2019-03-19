@@ -1,6 +1,6 @@
-diff -Naur linux-5.0.a/fs/aufs/branch.c linux-5.0.b/fs/aufs/branch.c
---- linux-5.0.a/fs/aufs/branch.c	2019-01-05 23:01:03.000000000 +0530
-+++ linux-5.0.b/fs/aufs/branch.c	2019-03-09 23:02:38.125367700 +0530
+diff -Naur linux-5.0.1.a/fs/aufs/branch.c linux-5.0.1.b/fs/aufs/branch.c
+--- linux-5.0.1.a/fs/aufs/branch.c	2019-03-07 21:15:11.000000000 +0530
++++ linux-5.0.1.b/fs/aufs/branch.c	2019-03-19 19:04:06.275917374 +0530
 @@ -1127,7 +1127,7 @@
  
  	err = copy_from_user(&ibusy, arg, sizeof(ibusy));
@@ -10,9 +10,9 @@ diff -Naur linux-5.0.a/fs/aufs/branch.c linux-5.0.b/fs/aufs/branch.c
  	if (unlikely(err)) {
  		err = -EFAULT;
  		AuTraceErr(err);
-diff -Naur linux-5.0.a/fs/aufs/mvdown.c linux-5.0.b/fs/aufs/mvdown.c
---- linux-5.0.a/fs/aufs/mvdown.c	2019-01-05 23:01:03.000000000 +0530
-+++ linux-5.0.b/fs/aufs/mvdown.c	2019-03-09 23:02:38.125367700 +0530
+diff -Naur linux-5.0.1.a/fs/aufs/mvdown.c linux-5.0.1.b/fs/aufs/mvdown.c
+--- linux-5.0.1.a/fs/aufs/mvdown.c	2019-03-07 21:15:11.000000000 +0530
++++ linux-5.0.1.b/fs/aufs/mvdown.c	2019-03-19 19:05:15.890721453 +0530
 @@ -643,7 +643,7 @@
  
  	err = copy_from_user(&args->mvdown, uarg, sizeof(args->mvdown));
@@ -22,9 +22,9 @@ diff -Naur linux-5.0.a/fs/aufs/mvdown.c linux-5.0.b/fs/aufs/mvdown.c
  	if (unlikely(err)) {
  		err = -EFAULT;
  		AuTraceErr(err);
-diff -Naur linux-5.0.a/fs/aufs/rdu.c linux-5.0.b/fs/aufs/rdu.c
---- linux-5.0.a/fs/aufs/rdu.c	2018-10-20 22:38:47.000000000 +0530
-+++ linux-5.0.b/fs/aufs/rdu.c	2019-03-09 23:02:38.125367700 +0530
+diff -Naur linux-5.0.1.a/fs/aufs/rdu.c linux-5.0.1.b/fs/aufs/rdu.c
+--- linux-5.0.1.a/fs/aufs/rdu.c	2019-03-07 21:15:11.000000000 +0530
++++ linux-5.0.1.b/fs/aufs/rdu.c	2019-03-19 19:05:58.546609600 +0530
 @@ -134,7 +134,7 @@
  	struct file *h_file;
  	struct au_rdu_cookie *cookie = &rdu->cookie;
