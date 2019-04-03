@@ -1,19 +1,20 @@
---- orig_repmgr_net.c   2018-07-17 18:38:14.071591439 -0500
-+++ repmgr_net.c    2018-07-17 18:36:40.302562092 -0500
+diff -Naur db-18.1.25.a/src/repmgr/repmgr_net.c db-18.1.25.c/src/repmgr/repmgr_net.c
+--- db-18.1.25.a/src/repmgr/repmgr_net.c	2019-04-03 17:15:51.770407147 +0530
++++ db-18.1.25.c/src/repmgr/repmgr_net.c	2019-04-03 17:17:51.859280549 +0530
 @@ -2894,6 +2894,7 @@
-    if (ssl_ctx)
-        SSL_CTX_free(ssl_ctx);
-
+ 	if (ssl_ctx)
+ 		SSL_CTX_free(ssl_ctx);
+ 
 +#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    if (repmgr_ssl_mutex_arr != NULL) {
-        for (i = 0; i < CRYPTO_num_locks(); i++) {
-            if (repmgr_ssl_mutex_arr[i] != NULL)
-@@ -2902,6 +2903,7 @@
-
-        repmgr_ssl_mutex_arr = NULL;
-    }
+ 	if (repmgr_ssl_mutex_arr != NULL) {
+ 		for (i = 0; i < CRYPTO_num_locks(); i++) {
+ 			if (repmgr_ssl_mutex_arr[i] != NULL)
+@@ -2902,7 +2903,7 @@
+ 		
+ 		repmgr_ssl_mutex_arr = NULL;
+ 	}
+-
 +#endif
-
-    return (1);
+ 	return (1);
  }
-
+ 
