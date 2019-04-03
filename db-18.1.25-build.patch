@@ -1,0 +1,19 @@
+--- orig_repmgr_net.c   2018-07-17 18:38:14.071591439 -0500
++++ repmgr_net.c    2018-07-17 18:36:40.302562092 -0500
+@@ -2894,6 +2894,7 @@
+    if (ssl_ctx)
+        SSL_CTX_free(ssl_ctx);
+
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    if (repmgr_ssl_mutex_arr != NULL) {
+        for (i = 0; i < CRYPTO_num_locks(); i++) {
+            if (repmgr_ssl_mutex_arr[i] != NULL)
+@@ -2902,6 +2903,7 @@
+
+        repmgr_ssl_mutex_arr = NULL;
+    }
++#endif
+
+    return (1);
+ }
+
