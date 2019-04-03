@@ -1,6 +1,6 @@
-diff -Naur linux-5.0.1.a/fs/aufs/branch.c linux-5.0.1.b/fs/aufs/branch.c
---- linux-5.0.1.a/fs/aufs/branch.c	2019-03-07 21:15:11.000000000 +0530
-+++ linux-5.0.1.b/fs/aufs/branch.c	2019-03-19 19:04:06.275917374 +0530
+diff -Naur linux-5.0.4.a/fs/aufs/branch.c linux-5.0.4.b/fs/aufs/branch.c
+--- linux-5.0.4.a/fs/aufs/branch.c	2019-03-07 21:15:11.000000000 +0530
++++ linux-5.0.4.b/fs/aufs/branch.c	2019-04-04 05:08:51.138643571 +0530
 @@ -1127,7 +1127,7 @@
  
  	err = copy_from_user(&ibusy, arg, sizeof(ibusy));
@@ -10,9 +10,9 @@ diff -Naur linux-5.0.1.a/fs/aufs/branch.c linux-5.0.1.b/fs/aufs/branch.c
  	if (unlikely(err)) {
  		err = -EFAULT;
  		AuTraceErr(err);
-diff -Naur linux-5.0.1.a/fs/aufs/mvdown.c linux-5.0.1.b/fs/aufs/mvdown.c
---- linux-5.0.1.a/fs/aufs/mvdown.c	2019-03-07 21:15:11.000000000 +0530
-+++ linux-5.0.1.b/fs/aufs/mvdown.c	2019-03-19 19:05:15.890721453 +0530
+diff -Naur linux-5.0.4.a/fs/aufs/mvdown.c linux-5.0.4.b/fs/aufs/mvdown.c
+--- linux-5.0.4.a/fs/aufs/mvdown.c	2019-03-07 21:15:11.000000000 +0530
++++ linux-5.0.4.b/fs/aufs/mvdown.c	2019-04-04 05:08:51.142643565 +0530
 @@ -643,7 +643,7 @@
  
  	err = copy_from_user(&args->mvdown, uarg, sizeof(args->mvdown));
@@ -22,9 +22,9 @@ diff -Naur linux-5.0.1.a/fs/aufs/mvdown.c linux-5.0.1.b/fs/aufs/mvdown.c
  	if (unlikely(err)) {
  		err = -EFAULT;
  		AuTraceErr(err);
-diff -Naur linux-5.0.1.a/fs/aufs/rdu.c linux-5.0.1.b/fs/aufs/rdu.c
---- linux-5.0.1.a/fs/aufs/rdu.c	2019-03-07 21:15:11.000000000 +0530
-+++ linux-5.0.1.b/fs/aufs/rdu.c	2019-03-19 19:05:58.546609600 +0530
+diff -Naur linux-5.0.4.a/fs/aufs/rdu.c linux-5.0.4.b/fs/aufs/rdu.c
+--- linux-5.0.4.a/fs/aufs/rdu.c	2019-03-07 21:15:11.000000000 +0530
++++ linux-5.0.4.b/fs/aufs/rdu.c	2019-04-04 05:08:51.142643565 +0530
 @@ -134,7 +134,7 @@
  	struct file *h_file;
  	struct au_rdu_cookie *cookie = &rdu->cookie;
@@ -43,3 +43,15 @@ diff -Naur linux-5.0.1.a/fs/aufs/rdu.c linux-5.0.1.b/fs/aufs/rdu.c
  		if (unlikely(err)) {
  			err = -EFAULT;
  			AuTraceErr(err);
+diff -Naur linux-5.0.4.a/fs/aufs/sysfs.c linux-5.0.4.b/fs/aufs/sysfs.c
+--- linux-5.0.4.a/fs/aufs/sysfs.c	2019-03-07 21:15:11.000000000 +0530
++++ linux-5.0.4.b/fs/aufs/sysfs.c	2019-04-04 05:09:40.246577891 +0530
+@@ -247,7 +247,7 @@
+ 
+ 	sz = sizeof(*arg) - offsetof(union aufs_brinfo, path);
+ 	for (bindex = 0; bindex <= bbot; bindex++, arg++) {
+-		err = !access_ok(VERIFY_WRITE, arg, sizeof(*arg));
++		err = !access_ok(arg, sizeof(*arg));
+ 		if (unlikely(err))
+ 			break;
+ 
