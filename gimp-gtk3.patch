@@ -1,6 +1,880 @@
+diff -Naur gimp-gtk3-port.a/app/core/gimpchannel.c gimp-gtk3-port.b/app/core/gimpchannel.c
+--- gimp-gtk3-port.a/app/core/gimpchannel.c	2018-05-20 20:57:44.000000000 +0530
++++ gimp-gtk3-port.b/app/core/gimpchannel.c	2019-04-11 17:57:21.490703991 +0530
+@@ -12,7 +12,7 @@
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+  */
+ 
+ #include "config.h"
+@@ -33,8 +33,10 @@
+ #include "paint/gimppaintoptions.h"
+ 
+ #include "gegl/gimp-gegl-apply-operation.h"
++#include "gegl/gimp-gegl-loops.h"
+ #include "gegl/gimp-gegl-mask.h"
+ #include "gegl/gimp-gegl-nodes.h"
++#include "gegl/gimp-gegl-utils.h"
+ 
+ #include "gimp.h"
+ #include "gimp-utils.h"
+@@ -58,6 +60,8 @@
+ #include "gimp-intl.h"
+ 
+ 
++#define RGBA_EPSILON 1e-6
++
+ enum
+ {
+   COLOR_CHANGED,
+@@ -155,8 +159,6 @@
+ static void gimp_channel_invalidate_boundary   (GimpDrawable       *drawable);
+ static void gimp_channel_get_active_components (GimpDrawable       *drawable,
+                                                 gboolean           *active);
+-static GimpComponentMask
+-                  gimp_channel_get_active_mask (GimpDrawable      *drawable);
+ 
+ static void      gimp_channel_set_buffer     (GimpDrawable        *drawable,
+                                               gboolean             push_undo,
+@@ -289,7 +291,6 @@
+   drawable_class->convert_type          = gimp_channel_convert_type;
+   drawable_class->invalidate_boundary   = gimp_channel_invalidate_boundary;
+   drawable_class->get_active_components = gimp_channel_get_active_components;
+-  drawable_class->get_active_mask       = gimp_channel_get_active_mask;
+   drawable_class->set_buffer            = gimp_channel_set_buffer;
+ 
+   klass->boundary       = gimp_channel_real_boundary;
+@@ -553,9 +554,9 @@
+ 
+               gegl_buffer_set_format (new_buffer,
+                                       gimp_drawable_get_format (new_drawable));
+-              gegl_buffer_copy (gimp_drawable_get_buffer (new_drawable), NULL,
+-                                GEGL_ABYSS_NONE,
+-                                new_buffer, NULL);
++              gimp_gegl_buffer_copy (gimp_drawable_get_buffer (new_drawable),
++                                     NULL, GEGL_ABYSS_NONE,
++                                     new_buffer, NULL);
+               gegl_buffer_set_format (new_buffer, NULL);
+ 
+               gimp_drawable_set_buffer (new_drawable, FALSE, NULL, new_buffer);
+@@ -610,7 +611,8 @@
+       gimp_drawable_set_buffer_full (drawable, FALSE, NULL,
+                                      new_buffer,
+                                      gimp_item_get_offset_x (item),
+-                                     gimp_item_get_offset_y (item));
++                                     gimp_item_get_offset_y (item),
++                                     TRUE);
+       g_object_unref (new_buffer);
+     }
+ 
+@@ -665,22 +667,22 @@
+         gegl_buffer_new (GEGL_RECTANGLE (0, 0, width, height),
+                          gimp_drawable_get_format (GIMP_DRAWABLE (channel)));
+ 
+-      gegl_buffer_copy (gimp_drawable_get_buffer (GIMP_DRAWABLE (channel)),
+-                        GEGL_RECTANGLE (x - SIGNED_ROUND (off_x),
+-                                        y - SIGNED_ROUND (off_y),
+-                                        width, height),
+-                        GEGL_ABYSS_NONE,
+-                        tmp_buffer,
+-                        GEGL_RECTANGLE (0, 0, 0, 0));
++      gimp_gegl_buffer_copy (gimp_drawable_get_buffer (GIMP_DRAWABLE (channel)),
++                             GEGL_RECTANGLE (x - SIGNED_ROUND (off_x),
++                                             y - SIGNED_ROUND (off_y),
++                                             width, height),
++                             GEGL_ABYSS_NONE,
++                             tmp_buffer,
++                             GEGL_RECTANGLE (0, 0, 0, 0));
+ 
+       /*  clear the mask  */
+       gegl_buffer_clear (gimp_drawable_get_buffer (GIMP_DRAWABLE (channel)),
+                          NULL);
+ 
+       /*  copy the temp mask back to the mask  */
+-      gegl_buffer_copy (tmp_buffer, NULL, GEGL_ABYSS_NONE,
+-                        gimp_drawable_get_buffer (GIMP_DRAWABLE (channel)),
+-                        GEGL_RECTANGLE (x, y, 0, 0));
++      gimp_gegl_buffer_copy (tmp_buffer, NULL, GEGL_ABYSS_NONE,
++                             gimp_drawable_get_buffer (GIMP_DRAWABLE (channel)),
++                             GEGL_RECTANGLE (x, y, 0, 0));
+ 
+       /*  free the temporary mask  */
+       g_object_unref (tmp_buffer);
+@@ -740,7 +742,8 @@
+       gimp_drawable_set_buffer_full (drawable,
+                                      gimp_item_is_attached (item), NULL,
+                                      new_buffer,
+-                                     new_offset_x, new_offset_y);
++                                     new_offset_x, new_offset_y,
++                                     TRUE);
+       g_object_unref (new_buffer);
+ 
+       gimp_channel_clear (GIMP_CHANNEL (item), NULL, FALSE);
+@@ -965,9 +968,9 @@
+ 
+   if (mask_dither_type == GEGL_DITHER_NONE)
+     {
+-      gegl_buffer_copy (gimp_drawable_get_buffer (drawable), NULL,
+-                        GEGL_ABYSS_NONE,
+-                        dest_buffer, NULL);
++      gimp_gegl_buffer_copy (gimp_drawable_get_buffer (drawable), NULL,
++                             GEGL_ABYSS_NONE,
++                             dest_buffer, NULL);
+     }
+   else
+     {
+@@ -1003,13 +1006,6 @@
+   active[ALPHA_G] = FALSE;
+ }
+ 
+-static GimpComponentMask
+-gimp_channel_get_active_mask (GimpDrawable *drawable)
+-{
+-  /*  Return all, because that skips the component mask op when painting  */
+-  return GIMP_COMPONENT_MASK_ALL;
+-}
+-
+ static void
+ gimp_channel_set_buffer (GimpDrawable *drawable,
+                          gboolean      push_undo,
+@@ -1250,6 +1246,13 @@
+                          const gchar *undo_desc,
+                          gboolean     push_undo)
+ {
++  GeglBuffer    *buffer;
++  GeglRectangle  rect;
++  GeglRectangle  aligned_rect;
++
++  if (channel->bounds_known && channel->empty)
++    return;
++
+   if (push_undo)
+     {
+       if (! undo_desc)
+@@ -1258,19 +1261,27 @@
+       gimp_channel_push_undo (channel, undo_desc);
+     }
+ 
+-  if (channel->bounds_known && ! channel->empty)
++  buffer = gimp_drawable_get_buffer (GIMP_DRAWABLE (channel));
++
++  if (channel->bounds_known)
+     {
+-      gegl_buffer_clear (gimp_drawable_get_buffer (GIMP_DRAWABLE (channel)),
+-                         GEGL_RECTANGLE (channel->x1, channel->y1,
+-                                         channel->x2 - channel->x1,
+-                                         channel->y2 - channel->y1));
++      rect.x      = channel->x1;
++      rect.y      = channel->y1;
++      rect.width  = channel->x2 - channel->x1;
++      rect.height = channel->y2 - channel->y1;
+     }
+   else
+     {
+-      gegl_buffer_clear (gimp_drawable_get_buffer (GIMP_DRAWABLE (channel)),
+-                         NULL);
++      rect.x      = 0;
++      rect.y      = 0;
++      rect.width  = gimp_item_get_width  (GIMP_ITEM (channel));
++      rect.height = gimp_item_get_height (GIMP_ITEM (channel));
+     }
+ 
++  gimp_gegl_rectangle_align_to_tile_grid (&aligned_rect, &rect, buffer);
++
++  gegl_buffer_clear (buffer, &aligned_rect);
++
+   /*  we know the bounds  */
+   channel->bounds_known = TRUE;
+   channel->empty        = TRUE;
+@@ -1279,7 +1290,8 @@
+   channel->x2           = gimp_item_get_width  (GIMP_ITEM (channel));
+   channel->y2           = gimp_item_get_height (GIMP_ITEM (channel));
+ 
+-  gimp_drawable_update (GIMP_DRAWABLE (channel), 0, 0, -1, -1);
++  gimp_drawable_update (GIMP_DRAWABLE (channel),
++                        rect.x, rect.y, rect.width, rect.height);
+ }
+ 
+ static void
+@@ -1600,7 +1612,7 @@
+                               name, color);
+ 
+   dest = gimp_drawable_get_buffer (GIMP_DRAWABLE (channel));
+-  gegl_buffer_copy (buffer, NULL, GEGL_ABYSS_NONE, dest, NULL);
++  gimp_gegl_buffer_copy (buffer, NULL, GEGL_ABYSS_NONE, dest, NULL);
+ 
+   return channel;
+ }
+@@ -1632,9 +1644,9 @@
+   gegl_buffer_set_format (dest_buffer,
+                           gimp_drawable_get_component_format (drawable,
+                                                               GIMP_CHANNEL_ALPHA));
+-  gegl_buffer_copy (gimp_drawable_get_buffer (drawable), NULL,
+-                    GEGL_ABYSS_NONE,
+-                    dest_buffer, NULL);
++  gimp_gegl_buffer_copy (gimp_drawable_get_buffer (drawable), NULL,
++                         GEGL_ABYSS_NONE,
++                         dest_buffer, NULL);
+   gegl_buffer_set_format (dest_buffer, NULL);
+ 
+   return channel;
+@@ -1670,7 +1682,7 @@
+   dest_buffer = gimp_drawable_get_buffer (GIMP_DRAWABLE (channel));
+ 
+   gegl_buffer_set_format (dest_buffer, format);
+-  gegl_buffer_copy (src_buffer, NULL, GEGL_ABYSS_NONE, dest_buffer, NULL);
++  gimp_gegl_buffer_copy (src_buffer, NULL, GEGL_ABYSS_NONE, dest_buffer, NULL);
+   gegl_buffer_set_format (dest_buffer, NULL);
+ 
+   return channel;
+@@ -1692,7 +1704,7 @@
+   g_return_if_fail (GIMP_IS_CHANNEL (channel));
+   g_return_if_fail (color != NULL);
+ 
+-  if (gimp_rgba_distance (&channel->color, color) > 0.0001)
++  if (gimp_rgba_distance (&channel->color, color) > RGBA_EPSILON)
+     {
+       if (push_undo && gimp_item_is_attached (GIMP_ITEM (channel)))
+         {
+diff -Naur gimp-gtk3-port.a/app/core/gimpdrawable.c gimp-gtk3-port.b/app/core/gimpdrawable.c
+--- gimp-gtk3-port.a/app/core/gimpdrawable.c	2018-05-20 20:57:44.000000000 +0530
++++ gimp-gtk3-port.b/app/core/gimpdrawable.c	2019-04-11 17:57:21.489703840 +0530
+@@ -12,7 +12,7 @@
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+  */
+ 
+ #include "config.h"
+@@ -66,6 +66,7 @@
+ enum
+ {
+   UPDATE,
++  FORMAT_CHANGED,
+   ALPHA_CHANGED,
+   LAST_SIGNAL
+ };
+@@ -99,6 +100,8 @@
+ static gboolean   gimp_drawable_get_size           (GimpViewable      *viewable,
+                                                     gint              *width,
+                                                     gint              *height);
++static void       gimp_drawable_preview_freeze     (GimpViewable      *viewable);
++static void       gimp_drawable_preview_thaw       (GimpViewable      *viewable);
+ 
+ static GeglNode * gimp_drawable_get_node           (GimpFilter        *filter);
+ 
+@@ -166,6 +169,9 @@
+                                                     gint               width,
+                                                     gint               height);
+ 
++static GimpComponentMask
++                gimp_drawable_real_get_active_mask (GimpDrawable      *drawable);
++
+ static void       gimp_drawable_real_convert_type  (GimpDrawable      *drawable,
+                                                     GimpImage         *dest_image,
+                                                     const Babl        *new_format,
+@@ -196,8 +202,12 @@
+                                                     gint               y);
+ static GeglNode * gimp_drawable_real_get_source_node (GimpDrawable    *drawable);
+ 
++static void       gimp_drawable_format_changed     (GimpDrawable      *drawable);
++static void       gimp_drawable_alpha_changed      (GimpDrawable      *drawable);
++
+ 
+ G_DEFINE_TYPE_WITH_CODE (GimpDrawable, gimp_drawable, GIMP_TYPE_ITEM,
++                         G_ADD_PRIVATE (GimpDrawable)
+                          G_IMPLEMENT_INTERFACE (GIMP_TYPE_COLOR_MANAGED,
+                                                 gimp_color_managed_iface_init)
+                          G_IMPLEMENT_INTERFACE (GIMP_TYPE_PICKABLE,
+@@ -230,6 +240,15 @@
+                   G_TYPE_INT,
+                   G_TYPE_INT);
+ 
++  gimp_drawable_signals[FORMAT_CHANGED] =
++    g_signal_new ("format-changed",
++                  G_TYPE_FROM_CLASS (klass),
++                  G_SIGNAL_RUN_FIRST,
++                  G_STRUCT_OFFSET (GimpDrawableClass, format_changed),
++                  NULL, NULL,
++                  gimp_marshal_VOID__VOID,
++                  G_TYPE_NONE, 0);
++
+   gimp_drawable_signals[ALPHA_CHANGED] =
+     g_signal_new ("alpha-changed",
+                   G_TYPE_FROM_CLASS (klass),
+@@ -249,6 +268,8 @@
+   viewable_class->get_size        = gimp_drawable_get_size;
+   viewable_class->get_new_preview = gimp_drawable_get_new_preview;
+   viewable_class->get_new_pixbuf  = gimp_drawable_get_new_pixbuf;
++  viewable_class->preview_freeze  = gimp_drawable_preview_freeze;
++  viewable_class->preview_thaw    = gimp_drawable_preview_thaw;
+ 
+   filter_class->get_node          = gimp_drawable_get_node;
+ 
+@@ -261,14 +282,14 @@
+   item_class->transform           = gimp_drawable_transform;
+ 
+   klass->update                   = gimp_drawable_real_update;
++  klass->format_changed           = NULL;
+   klass->alpha_changed            = NULL;
+   klass->estimate_memsize         = gimp_drawable_real_estimate_memsize;
+   klass->invalidate_boundary      = NULL;
+   klass->get_active_components    = NULL;
+-  klass->get_active_mask          = NULL;
++  klass->get_active_mask          = gimp_drawable_real_get_active_mask;
+   klass->convert_type             = gimp_drawable_real_convert_type;
+   klass->apply_buffer             = gimp_drawable_real_apply_buffer;
+-  klass->replace_buffer           = gimp_drawable_real_replace_buffer;
+   klass->get_buffer               = gimp_drawable_real_get_buffer;
+   klass->set_buffer               = gimp_drawable_real_set_buffer;
+   klass->push_undo                = gimp_drawable_real_push_undo;
+@@ -276,16 +297,12 @@
+   klass->get_source_node          = gimp_drawable_real_get_source_node;
+ 
+   g_object_class_override_property (object_class, PROP_BUFFER, "buffer");
+-
+-  g_type_class_add_private (klass, sizeof (GimpDrawablePrivate));
+ }
+ 
+ static void
+ gimp_drawable_init (GimpDrawable *drawable)
+ {
+-  drawable->private = G_TYPE_INSTANCE_GET_PRIVATE (drawable,
+-                                                   GIMP_TYPE_DRAWABLE,
+-                                                   GimpDrawablePrivate);
++  drawable->private = gimp_drawable_get_instance_private (drawable);
+ 
+   drawable->private->filter_stack = gimp_filter_stack_new (GIMP_TYPE_FILTER);
+ }
+@@ -403,6 +420,30 @@
+   return TRUE;
+ }
+ 
++static void
++gimp_drawable_preview_freeze (GimpViewable *viewable)
++{
++  GimpViewable *parent = gimp_viewable_get_parent (viewable);
++
++  if (! parent && gimp_item_is_attached (GIMP_ITEM (viewable)))
++    parent = GIMP_VIEWABLE (gimp_item_get_image (GIMP_ITEM (viewable)));
++
++  if (parent)
++    gimp_viewable_preview_freeze (parent);
++}
++
++static void
++gimp_drawable_preview_thaw (GimpViewable *viewable)
++{
++  GimpViewable *parent = gimp_viewable_get_parent (viewable);
++
++  if (! parent && gimp_item_is_attached (GIMP_ITEM (viewable)))
++    parent = GIMP_VIEWABLE (gimp_item_get_image (GIMP_ITEM (viewable)));
++
++  if (parent)
++    gimp_viewable_preview_thaw (parent);
++}
++
+ static GeglNode *
+ gimp_drawable_get_node (GimpFilter *filter)
+ {
+@@ -494,7 +535,8 @@
+ 
+   gimp_drawable_set_buffer_full (drawable, gimp_item_is_attached (item), NULL,
+                                  new_buffer,
+-                                 new_offset_x, new_offset_y);
++                                 new_offset_x, new_offset_y,
++                                 TRUE);
+   g_object_unref (new_buffer);
+ }
+ 
+@@ -559,19 +601,21 @@
+   if (intersect && copy_width && copy_height)
+     {
+       /*  Copy the pixels in the intersection  */
+-      gegl_buffer_copy (gimp_drawable_get_buffer (drawable),
+-                        GEGL_RECTANGLE (copy_x - gimp_item_get_offset_x (item),
+-                                        copy_y - gimp_item_get_offset_y (item),
+-                                        copy_width,
+-                                        copy_height), GEGL_ABYSS_NONE,
+-                        new_buffer,
+-                        GEGL_RECTANGLE (copy_x - new_offset_x,
+-                                        copy_y - new_offset_y, 0, 0));
++      gimp_gegl_buffer_copy (
++        gimp_drawable_get_buffer (drawable),
++        GEGL_RECTANGLE (copy_x - gimp_item_get_offset_x (item),
++                        copy_y - gimp_item_get_offset_y (item),
++                        copy_width,
++                        copy_height), GEGL_ABYSS_NONE,
++        new_buffer,
++        GEGL_RECTANGLE (copy_x - new_offset_x,
++                        copy_y - new_offset_y, 0, 0));
+     }
+ 
+   gimp_drawable_set_buffer_full (drawable, gimp_item_is_attached (item), NULL,
+                                  new_buffer,
+-                                 new_offset_x, new_offset_y);
++                                 new_offset_x, new_offset_y,
++                                 TRUE);
+   g_object_unref (new_buffer);
+ }
+ 
+@@ -757,6 +801,13 @@
+   return (gint64) babl_format_get_bytes_per_pixel (format) * width * height;
+ }
+ 
++static GimpComponentMask
++gimp_drawable_real_get_active_mask (GimpDrawable *drawable)
++{
++  /*  Return all, because that skips the component mask op when painting  */
++  return GIMP_COMPONENT_MASK_ALL;
++}
++
+ /* FIXME: this default impl is currently unused because no subclass
+  * chains up. the goal is to handle the almost identical subclass code
+  * here again.
+@@ -779,8 +830,9 @@
+                                      gimp_item_get_height (GIMP_ITEM (drawable))),
+                      new_format);
+ 
+-  gegl_buffer_copy (gimp_drawable_get_buffer (drawable), NULL, GEGL_ABYSS_NONE,
+-                    dest_buffer, NULL);
++  gimp_gegl_buffer_copy (
++    gimp_drawable_get_buffer (drawable), NULL, GEGL_ABYSS_NONE,
++    dest_buffer, NULL);
+ 
+   gimp_drawable_set_buffer (drawable, push_undo, NULL, dest_buffer);
+   g_object_unref (dest_buffer);
+@@ -800,8 +852,9 @@
+                                gint          offset_x,
+                                gint          offset_y)
+ {
+-  GimpItem *item          = GIMP_ITEM (drawable);
+-  gint      old_has_alpha = -1;
++  GimpItem   *item          = GIMP_ITEM (drawable);
++  const Babl *old_format    = NULL;
++  gint        old_has_alpha = -1;
+ 
+   g_object_freeze_notify (G_OBJECT (drawable));
+ 
+@@ -811,43 +864,27 @@
+     gimp_image_undo_push_drawable_mod (gimp_item_get_image (item), undo_desc,
+                                        drawable, FALSE);
+ 
+-  /*  ref new before unrefing old, they might be the same  */
+-  g_object_ref (buffer);
+-
+   if (drawable->private->buffer)
+     {
++      old_format    = gimp_drawable_get_format (drawable);
+       old_has_alpha = gimp_drawable_has_alpha (drawable);
+-
+-      g_object_unref (drawable->private->buffer);
+     }
+ 
+-  drawable->private->buffer = buffer;
++  g_set_object (&drawable->private->buffer, buffer);
+ 
+   if (drawable->private->buffer_source_node)
+     gegl_node_set (drawable->private->buffer_source_node,
+                    "buffer", gimp_drawable_get_buffer (drawable),
+                    NULL);
+ 
+-  if (drawable->private->convert_format)
+-    {
+-      const Babl *format = gimp_drawable_get_format (drawable);
+-
+-      if (babl_format_is_palette (format))
+-        gegl_node_set (drawable->private->convert_format,
+-                       "operation", "gegl:convert-format",
+-                       "format",    gimp_drawable_get_format (drawable),
+-                       NULL);
+-      else
+-        gegl_node_set (drawable->private->convert_format,
+-                       "operation", "gegl:nop",
+-                       NULL);
+-    }
+-
+   gimp_item_set_offset (item, offset_x, offset_y);
+   gimp_item_set_size (item,
+                       gegl_buffer_get_width  (buffer),
+                       gegl_buffer_get_height (buffer));
+ 
++  if (gimp_drawable_get_format (drawable) != old_format)
++    gimp_drawable_format_changed (drawable);
++
+   if (gimp_drawable_has_alpha (drawable) != old_has_alpha)
+     gimp_drawable_alpha_changed (drawable);
+ 
+@@ -865,22 +902,40 @@
+                               gint          width,
+                               gint          height)
+ {
++  GimpImage *image;
++
+   if (! buffer)
+     {
++      GeglBuffer    *drawable_buffer = gimp_drawable_get_buffer (drawable);
++      GeglRectangle  drawable_rect;
++
++      gimp_gegl_rectangle_align_to_tile_grid (
++        &drawable_rect,
++        GEGL_RECTANGLE (x, y, width, height),
++        drawable_buffer);
++
++      x      = drawable_rect.x;
++      y      = drawable_rect.y;
++      width  = drawable_rect.width;
++      height = drawable_rect.height;
++
+       buffer = gegl_buffer_new (GEGL_RECTANGLE (0, 0, width, height),
+                                 gimp_drawable_get_format (drawable));
+ 
+-      gegl_buffer_copy (gimp_drawable_get_buffer (drawable),
+-                        GEGL_RECTANGLE (x, y, width, height), GEGL_ABYSS_NONE,
+-                        buffer,
+-                        GEGL_RECTANGLE (0, 0, 0, 0));
++      gimp_gegl_buffer_copy (
++        drawable_buffer,
++        &drawable_rect, GEGL_ABYSS_NONE,
++        buffer,
++        GEGL_RECTANGLE (0, 0, 0, 0));
+     }
+   else
+     {
+       g_object_ref (buffer);
+     }
+ 
+-  gimp_image_undo_push_drawable (gimp_item_get_image (GIMP_ITEM (drawable)),
++  image = gimp_item_get_image (GIMP_ITEM (drawable));
++
++  gimp_image_undo_push_drawable (image,
+                                  undo_desc, drawable,
+                                  buffer, x, y);
+ 
+@@ -899,14 +954,14 @@
+ 
+   tmp = gegl_buffer_dup (buffer);
+ 
+-  gegl_buffer_copy (gimp_drawable_get_buffer (drawable),
+-                    GEGL_RECTANGLE (x, y, width, height), GEGL_ABYSS_NONE,
+-                    buffer,
+-                    GEGL_RECTANGLE (0, 0, 0, 0));
+-  gegl_buffer_copy (tmp,
+-                    GEGL_RECTANGLE (0, 0, width, height), GEGL_ABYSS_NONE,
+-                    gimp_drawable_get_buffer (drawable),
+-                    GEGL_RECTANGLE (x, y, 0, 0));
++  gimp_gegl_buffer_copy (gimp_drawable_get_buffer (drawable),
++                         GEGL_RECTANGLE (x, y, width, height), GEGL_ABYSS_NONE,
++                         buffer,
++                         GEGL_RECTANGLE (0, 0, 0, 0));
++  gimp_gegl_buffer_copy (tmp,
++                         GEGL_RECTANGLE (0, 0, width, height), GEGL_ABYSS_NONE,
++                         gimp_drawable_get_buffer (drawable),
++                         GEGL_RECTANGLE (x, y, 0, 0));
+ 
+   g_object_unref (tmp);
+ 
+@@ -927,6 +982,18 @@
+   return g_object_ref (drawable->private->buffer_source_node);
+ }
+ 
++static void
++gimp_drawable_format_changed (GimpDrawable *drawable)
++{
++  g_signal_emit (drawable, gimp_drawable_signals[FORMAT_CHANGED], 0);
++}
++
++static void
++gimp_drawable_alpha_changed (GimpDrawable *drawable)
++{
++  g_signal_emit (drawable, gimp_drawable_signals[ALPHA_CHANGED], 0);
++}
++
+ 
+ /*  public functions  */
+ 
+@@ -1045,14 +1112,6 @@
+ }
+ 
+ void
+-gimp_drawable_alpha_changed (GimpDrawable *drawable)
+-{
+-  g_return_if_fail (GIMP_IS_DRAWABLE (drawable));
+-
+-  g_signal_emit (drawable, gimp_drawable_signals[ALPHA_CHANGED], 0);
+-}
+-
+-void
+ gimp_drawable_invalidate_boundary (GimpDrawable *drawable)
+ {
+   GimpDrawableClass *drawable_class;
+@@ -1083,16 +1142,28 @@
+ GimpComponentMask
+ gimp_drawable_get_active_mask (GimpDrawable *drawable)
+ {
+-  GimpDrawableClass *drawable_class;
++  GimpComponentMask mask;
+ 
+   g_return_val_if_fail (GIMP_IS_DRAWABLE (drawable), 0);
+ 
+-  drawable_class = GIMP_DRAWABLE_GET_CLASS (drawable);
++  mask = GIMP_DRAWABLE_GET_CLASS (drawable)->get_active_mask (drawable);
+ 
+-  if (drawable_class->get_active_mask)
+-    return drawable_class->get_active_mask (drawable);
++  /* if the drawable doesn't have an alpha channel, the value of the mask's
++   * alpha-bit doesn't matter, however, we'd like to have a fully-clear or
++   * fully-set mask whenever possible, since it allows us to skip component
++   * masking altogether.  we therefore set or clear the alpha bit, depending on
++   * the state of the other bits, so that it never gets in the way of a uniform
++   * mask.
++   */
++  if (! gimp_drawable_has_alpha (drawable))
++    {
++      if (mask & ~GIMP_COMPONENT_MASK_ALPHA)
++        mask |= GIMP_COMPONENT_MASK_ALPHA;
++      else
++        mask &= ~GIMP_COMPONENT_MASK_ALPHA;
++    }
+ 
+-  return 0;
++  return mask;
+ }
+ 
+ void
+@@ -1189,31 +1260,6 @@
+                                                     base_x, base_y);
+ }
+ 
+-void
+-gimp_drawable_replace_buffer (GimpDrawable        *drawable,
+-                              GeglBuffer          *buffer,
+-                              const GeglRectangle *buffer_region,
+-                              gboolean             push_undo,
+-                              const gchar         *undo_desc,
+-                              gdouble              opacity,
+-                              GeglBuffer          *mask,
+-                              const GeglRectangle *mask_region,
+-                              gint                 x,
+-                              gint                 y)
+-{
+-  g_return_if_fail (GIMP_IS_DRAWABLE (drawable));
+-  g_return_if_fail (gimp_item_is_attached (GIMP_ITEM (drawable)));
+-  g_return_if_fail (GEGL_IS_BUFFER (buffer));
+-  g_return_if_fail (GEGL_IS_BUFFER (mask));
+-
+-  GIMP_DRAWABLE_GET_CLASS (drawable)->replace_buffer (drawable, buffer,
+-                                                      buffer_region,
+-                                                      push_undo, undo_desc,
+-                                                      opacity,
+-                                                      mask, mask_region,
+-                                                      x, y);
+-}
+-
+ GeglBuffer *
+ gimp_drawable_get_buffer (GimpDrawable *drawable)
+ {
+@@ -1242,7 +1288,7 @@
+   gimp_item_get_offset (GIMP_ITEM (drawable), &offset_x, &offset_y);
+ 
+   gimp_drawable_set_buffer_full (drawable, push_undo, undo_desc, buffer,
+-                                 offset_x, offset_y);
++                                 offset_x, offset_y, TRUE);
+ }
+ 
+ void
+@@ -1251,7 +1297,8 @@
+                                const gchar  *undo_desc,
+                                GeglBuffer   *buffer,
+                                gint          offset_x,
+-                               gint          offset_y)
++                               gint          offset_y,
++                               gboolean      update)
+ {
+   GimpItem *item;
+ 
+@@ -1263,10 +1310,11 @@
+   if (! gimp_item_is_attached (GIMP_ITEM (drawable)))
+     push_undo = FALSE;
+ 
+-  if (gimp_item_get_width  (item)   != gegl_buffer_get_width (buffer)  ||
+-      gimp_item_get_height (item)   != gegl_buffer_get_height (buffer) ||
+-      gimp_item_get_offset_x (item) != offset_x                        ||
+-      gimp_item_get_offset_y (item) != offset_y)
++  if (update                                                            &&
++      (gimp_item_get_width  (item)   != gegl_buffer_get_width (buffer)  ||
++       gimp_item_get_height (item)   != gegl_buffer_get_height (buffer) ||
++       gimp_item_get_offset_x (item) != offset_x                        ||
++       gimp_item_get_offset_y (item) != offset_y))
+     {
+       gimp_drawable_update (drawable, 0, 0, -1, -1);
+     }
+@@ -1280,7 +1328,8 @@
+ 
+   g_object_thaw_notify (G_OBJECT (drawable));
+ 
+-  gimp_drawable_update (drawable, 0, 0, -1, -1);
++  if (update)
++    gimp_drawable_update (drawable, 0, 0, -1, -1);
+ }
+ 
+ void
+@@ -1312,11 +1361,10 @@
+ GeglNode *
+ gimp_drawable_get_source_node (GimpDrawable *drawable)
+ {
+-  const Babl *format;
+-  GeglNode   *input;
+-  GeglNode   *source;
+-  GeglNode   *filter;
+-  GeglNode   *output;
++  GeglNode *input;
++  GeglNode *source;
++  GeglNode *filter;
++  GeglNode *output;
+ 
+   g_return_val_if_fail (GIMP_IS_DRAWABLE (drawable), NULL);
+ 
+@@ -1346,27 +1394,10 @@
+   gegl_node_connect_to (source, "output",
+                         filter, "input");
+ 
+-  format = gimp_drawable_get_format (drawable);
+-
+-  if (babl_format_is_palette (format))
+-    drawable->private->convert_format =
+-      gegl_node_new_child (drawable->private->source_node,
+-                           "operation", "gegl:convert-format",
+-                           "format",    gimp_drawable_get_format (drawable),
+-                           NULL);
+-  else
+-    drawable->private->convert_format =
+-      gegl_node_new_child (drawable->private->source_node,
+-                           "operation", "gegl:nop",
+-                           NULL);
+-
+-  gegl_node_connect_to (filter,                            "output",
+-                        drawable->private->convert_format, "input");
+-
+   output = gegl_node_get_output_proxy (drawable->private->source_node, "output");
+ 
+-  gegl_node_connect_to (drawable->private->convert_format, "output",
+-                        output,                            "input");
++  gegl_node_connect_to (filter, "output",
++                        output, "input");
+ 
+   if (gimp_drawable_get_floating_sel (drawable))
+     _gimp_drawable_add_floating_sel_filter (drawable);
+@@ -1691,7 +1722,7 @@
+           cairo_region_get_rectangle (drawable->private->paint_copy_region,
+                                       i, (cairo_rectangle_int_t *) &rect);
+ 
+-          gegl_buffer_copy (
++          gimp_gegl_buffer_copy (
+             drawable->private->paint_buffer, &rect, GEGL_ABYSS_NONE,
+             buffer, NULL);
+         }
+diff -Naur gimp-gtk3-port.a/app/core/gimpdrawable.h gimp-gtk3-port.b/app/core/gimpdrawable.h
+--- gimp-gtk3-port.a/app/core/gimpdrawable.h	2018-05-20 20:57:44.000000000 +0530
++++ gimp-gtk3-port.b/app/core/gimpdrawable.h	2019-04-11 17:57:21.486703387 +0530
+@@ -12,7 +12,7 @@
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+  */
+ 
+ #ifndef __GIMP_DRAWABLE_H__
+@@ -50,6 +50,7 @@
+                                            gint                  y,
+                                            gint                  width,
+                                            gint                  height);
++  void          (* format_changed)        (GimpDrawable         *drawable);
+   void          (* alpha_changed)         (GimpDrawable         *drawable);
+ 
+   /*  virtual functions  */
+@@ -82,16 +83,6 @@
+                                            GeglBuffer           *base_buffer,
+                                            gint                  base_x,
+                                            gint                  base_y);
+-  void          (* replace_buffer)        (GimpDrawable         *drawable,
+-                                           GeglBuffer           *buffer,
+-                                           const GeglRectangle  *buffer_region,
+-                                           gboolean              push_undo,
+-                                           const gchar          *undo_desc,
+-                                           gdouble               opacity,
+-                                           GeglBuffer           *mask,
+-                                           const GeglRectangle  *mask_region,
+-                                           gint                  x,
+-                                           gint                  y);
+   GeglBuffer  * (* get_buffer)            (GimpDrawable         *drawable);
+   void          (* set_buffer)            (GimpDrawable         *drawable,
+                                            gboolean              push_undo,
+@@ -135,7 +126,6 @@
+                                                   gint                y,
+                                                   gint                width,
+                                                   gint                height);
+-void            gimp_drawable_alpha_changed      (GimpDrawable       *drawable);
+ 
+ void           gimp_drawable_invalidate_boundary (GimpDrawable       *drawable);
+ void         gimp_drawable_get_active_components (GimpDrawable       *drawable,
+@@ -166,16 +156,6 @@
+                                                   GeglBuffer          *base_buffer,
+                                                   gint                 base_x,
+                                                   gint                 base_y);
+-void            gimp_drawable_replace_buffer     (GimpDrawable        *drawable,
+-                                                  GeglBuffer          *buffer,
+-                                                  const GeglRectangle *buffer_region,
+-                                                  gboolean             push_undo,
+-                                                  const gchar         *undo_desc,
+-                                                  gdouble              opacity,
+-                                                  GeglBuffer          *mask,
+-                                                  const GeglRectangle *mask_region,
+-                                                  gint                 x,
+-                                                  gint                 y);
+ 
+ GeglBuffer    * gimp_drawable_get_buffer         (GimpDrawable       *drawable);
+ void            gimp_drawable_set_buffer         (GimpDrawable       *drawable,
+@@ -187,7 +167,8 @@
+                                                   const gchar        *undo_desc,
+                                                   GeglBuffer         *buffer,
+                                                   gint                offset_x,
+-                                                  gint                offset_y);
++                                                  gint                offset_y,
++                                                  gboolean            update);
+ 
+ void            gimp_drawable_steal_buffer       (GimpDrawable       *drawable,
+                                                   GimpDrawable       *src_drawable);
+diff -Naur gimp-gtk3-port.a/app/core/gimpdrawablemodundo.c gimp-gtk3-port.b/app/core/gimpdrawablemodundo.c
+--- gimp-gtk3-port.a/app/core/gimpdrawablemodundo.c	2018-05-20 20:57:44.000000000 +0530
++++ gimp-gtk3-port.b/app/core/gimpdrawablemodundo.c	2019-04-11 17:57:21.485703236 +0530
+@@ -12,7 +12,7 @@
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+  */
+ 
+ #include "config.h"
+@@ -198,7 +198,7 @@
+                         &drawable_mod_undo->offset_y);
+ 
+   gimp_drawable_set_buffer_full (drawable, FALSE, NULL,
+-                                 buffer, offset_x, offset_y);
++                                 buffer, offset_x, offset_y, TRUE);
+   g_object_unref (buffer);
+ }
+ 
 diff -Naur gimp-gtk3-port.a/app/core/gimpdrawable-transform.c gimp-gtk3-port.b/app/core/gimpdrawable-transform.c
 --- gimp-gtk3-port.a/app/core/gimpdrawable-transform.c	2018-05-20 20:57:44.000000000 +0530
-+++ gimp-gtk3-port.b/app/core/gimpdrawable-transform.c	2019-04-11 17:51:10.626603827 +0530
++++ gimp-gtk3-port.b/app/core/gimpdrawable-transform.c	2019-04-11 17:57:21.483702933 +0530
 @@ -12,7 +12,7 @@
   * GNU General Public License for more details.
   *
@@ -393,6 +1267,355 @@ diff -Naur gimp-gtk3-port.a/app/core/gimpdrawable-transform.h gimp-gtk3-port.b/a
  
  
  #endif  /*  __GIMP_DRAWABLE_TRANSFORM_H__  */
+diff -Naur gimp-gtk3-port.a/app/core/gimpgrouplayer.c gimp-gtk3-port.b/app/core/gimpgrouplayer.c
+--- gimp-gtk3-port.a/app/core/gimpgrouplayer.c	2018-05-20 20:57:44.000000000 +0530
++++ gimp-gtk3-port.b/app/core/gimpgrouplayer.c	2019-04-11 17:57:21.485703236 +0530
+@@ -15,7 +15,7 @@
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+  */
+ 
+ #include "config.h"
+@@ -31,6 +31,7 @@
+ #include "core-types.h"
+ 
+ #include "gegl/gimp-babl.h"
++#include "gegl/gimp-gegl-loops.h"
+ 
+ #include "gimpgrouplayer.h"
+ #include "gimpgrouplayerundo.h"
+@@ -61,6 +62,7 @@
+   gint            suspend_mask;
+   GeglBuffer     *suspended_mask_buffer;
+   GeglRectangle   suspended_mask_bounds;
++  gint            direct_update;
+   gint            transforming;
+   gboolean        expanded;
+   gboolean        pass_through;
+@@ -72,9 +74,7 @@
+   gint            reallocate_height;
+ };
+ 
+-#define GET_PRIVATE(item) G_TYPE_INSTANCE_GET_PRIVATE (item, \
+-                                                       GIMP_TYPE_GROUP_LAYER, \
+-                                                       GimpGroupLayerPrivate)
++#define GET_PRIVATE(item) ((GimpGroupLayerPrivate *) gimp_group_layer_get_instance_private ((GimpGroupLayer *) (item)))
+ 
+ 
+ static void            gimp_projectable_iface_init   (GimpProjectableInterface  *iface);
+@@ -229,6 +229,7 @@
+ 
+ 
+ G_DEFINE_TYPE_WITH_CODE (GimpGroupLayer, gimp_group_layer, GIMP_TYPE_LAYER,
++                         G_ADD_PRIVATE (GimpGroupLayer)
+                          G_IMPLEMENT_INTERFACE (GIMP_TYPE_PROJECTABLE,
+                                                 gimp_projectable_iface_init)
+                          G_IMPLEMENT_INTERFACE (GIMP_TYPE_PICKABLE,
+@@ -299,8 +300,6 @@
+   layer_class->get_effective_mode        = gimp_group_layer_get_effective_mode;
+   layer_class->get_excludes_backdrop     = gimp_group_layer_get_excludes_backdrop;
+ 
+-  g_type_class_add_private (klass, sizeof (GimpGroupLayerPrivate));
+-
+   if (g_getenv ("GIMP_NO_PASS_THROUGH_STRENGTH_REDUCTION"))
+     no_pass_through_strength_reduction = TRUE;
+ }
+@@ -456,6 +455,7 @@
+                            gint         *height)
+ {
+   GimpGroupLayerPrivate *private = GET_PRIVATE (viewable);
++  gboolean               result;
+ 
+   if (private->reallocate_width  != 0 &&
+       private->reallocate_height != 0)
+@@ -466,13 +466,18 @@
+       return TRUE;
+     }
+ 
+-  /*  return the size only if there are children...  */
+-  if (gimp_item_stack_get_item_iter (GIMP_ITEM_STACK (private->children)))
+-    return GIMP_VIEWABLE_CLASS (parent_class)->get_size (viewable,
++  result = GIMP_VIEWABLE_CLASS (parent_class)->get_size (viewable,
+                                                          width, height);
+ 
+-  /*  ...otherwise return "no content"  */
+-  return FALSE;
++  /* if the group is empty, return "no content" through
++   * gimp_viewable_get_size(), but make sure to set *width and *height anyway,
++   * so that the correct size is reported to the projection through
++   * gimp_projectable_get_size().  see issue #3134.
++   */
++  if (gimp_container_is_empty (private->children))
++    result = FALSE;
++
++  return result;
+ }
+ 
+ static GimpContainer *
+@@ -747,10 +752,35 @@
+ {
+   GimpGroupLayer        *group   = GIMP_GROUP_LAYER (layer);
+   GimpGroupLayerPrivate *private = GET_PRIVATE (layer);
++  gint                   x, y;
+   GList                 *list;
+ 
+-  /*  don't push an undo here because undo will call us again  */
+-  gimp_group_layer_suspend_resize (group, FALSE);
++  /*  don't use gimp_group_layer_suspend_resize(), but rather increment
++   *  private->suspend_resize directly, since we're translating the group layer
++   *  here, rather than relying on gimp_group_layer_update_size() to do it.
++   */
++  private->suspend_resize++;
++
++  /*  redirect stack updates to the drawable, rather than to the projection  */
++  private->direct_update++;
++
++  gimp_item_get_offset (GIMP_ITEM (group), &x, &y);
++
++  x += offset_x;
++  y += offset_y;
++
++  /*  update the offset node  */
++  if (private->offset_node)
++    gegl_node_set (private->offset_node,
++                   "x", (gdouble) -x,
++                   "y", (gdouble) -y,
++                   NULL);
++
++  /*  invalidate the selection boundary because of a layer modification  */
++  gimp_drawable_invalidate_boundary (GIMP_DRAWABLE (layer));
++
++  /*  update the group layer offset  */
++  gimp_item_set_offset (GIMP_ITEM (group), x, y);
+ 
+   for (list = gimp_item_stack_get_item_iter (GIMP_ITEM_STACK (private->children));
+        list;
+@@ -762,8 +792,14 @@
+       gimp_item_translate (child, offset_x, offset_y, FALSE);
+     }
+ 
+-  /*  don't push an undo here because undo will call us again  */
+-  gimp_group_layer_resume_resize (group, FALSE);
++  /*  redirect stack updates back to the projection  */
++  private->direct_update--;
++
++  /*  don't use gimp_group_layer_resume_resize(), but rather decrement
++   *  private->suspend_resize directly, so that gimp_group_layer_update_size()
++   *  isn't called.
++   */
++  private->suspend_resize--;
+ }
+ 
+ static void
+@@ -999,7 +1035,8 @@
+                                  FALSE, NULL,
+                                  buffer,
+                                  gimp_item_get_offset_x (GIMP_ITEM (group)),
+-                                 gimp_item_get_offset_y (GIMP_ITEM (group)));
++                                 gimp_item_get_offset_y (GIMP_ITEM (group)),
++                                 TRUE);
+ 
+   /*  reset, the actual format is right now  */
+   private->convert_format = NULL;
+@@ -1375,6 +1412,10 @@
+                                                0, 0, 1, 1,
+                                                format));
+ 
++  gimp_layer_set_mode (GIMP_LAYER (group),
++                       gimp_image_get_default_new_layer_mode (image),
++                       FALSE);
++
+   return GIMP_LAYER (group);
+ }
+ 
+@@ -1769,6 +1810,14 @@
+     }
+   else
+     {
++      /* make sure we have a buffer, and stop any idle rendering, which is
++       * initiated when a new buffer is allocated.  the call to
++       * gimp_pickable_flush() below causes any pending idle rendering to
++       * finish synchronously, so this needs to happen before.
++       */
++      gimp_pickable_get_buffer (GIMP_PICKABLE (private->projection));
++      gimp_projection_stop_rendering (private->projection);
++
+       /*  flush the pickable not the projectable because flushing the
+        *  pickable will finish all invalidation on the projection so it
+        *  can be used as source (note that it will still be constructed
+@@ -1864,6 +1913,8 @@
+ 
+   if (private->reallocate_projection || size_changed)
+     {
++      GeglBuffer *buffer;
++
+       /* if the graph is already constructed, set the offset node's
+        * coordinates first, so the graph is in the right state when
+        * the projection is reallocated, see bug #730550.
+@@ -1880,46 +1931,45 @@
+        */
+       gimp_item_set_offset (item, x, y);
+ 
+-      if (private->reallocate_projection ||
+-          width  != old_width            ||
+-          height != old_height)
+-        {
+-          GeglBuffer *buffer;
++      /*  temporarily change the return values of gimp_viewable_get_size()
++       *  so the projection allocates itself correctly
++       */
++      private->reallocate_width  = width;
++      private->reallocate_height = height;
+ 
++      if (private->reallocate_projection)
++        {
+           private->reallocate_projection = FALSE;
+ 
+-          /*  temporarily change the return values of gimp_viewable_get_size()
+-           *  so the projection allocates itself correctly
+-           */
+-          private->reallocate_width  = width;
+-          private->reallocate_height = height;
+-
+           gimp_projectable_structure_changed (GIMP_PROJECTABLE (group));
+-          gimp_group_layer_flush (group);
+-
+-          buffer = gimp_pickable_get_buffer (GIMP_PICKABLE (private->projection));
+-
+-          gimp_drawable_set_buffer_full (GIMP_DRAWABLE (group),
+-                                         FALSE, NULL,
+-                                         buffer,
+-                                         x, y);
+-
+-          /*  reset, the actual size is correct now  */
+-          private->reallocate_width  = 0;
+-          private->reallocate_height = 0;
+         }
+       else
+         {
+-          /*  invalidate the entire projection since the position of
+-           *  the children relative to each other might have changed
+-           *  in a way that happens to leave the group's width and
+-           *  height the same
++          /* when there's no need to reallocate the projection, we call
++           * gimp_projectable_bounds_changed(), rather than structure_chaned(),
++           * so that the projection simply copies the old content over to the
++           * new buffer with an offset, rather than re-renders the graph.
+            */
+-          gimp_projectable_invalidate (GIMP_PROJECTABLE (group),
+-                                       x, y, width, height);
+-
+-          gimp_group_layer_flush (group);
++          gimp_projectable_bounds_changed (GIMP_PROJECTABLE (group),
++                                           old_x, old_y, old_width, old_height);
+         }
++
++      buffer = gimp_pickable_get_buffer (GIMP_PICKABLE (private->projection));
++
++      gimp_drawable_set_buffer_full (GIMP_DRAWABLE (group),
++                                     FALSE, NULL,
++                                     buffer,
++                                     x, y,
++                                     FALSE /* don't update the drawable, the
++                                            * flush() below will take care of
++                                            * that.
++                                            */);
++
++      gimp_group_layer_flush (group);
++
++      /*  reset, the actual size is correct now  */
++      private->reallocate_width  = 0;
++      private->reallocate_height = 0;
+     }
+ 
+   /* resize the mask if not transforming (in which case, GimpLayer takes care
+@@ -2000,22 +2050,23 @@
+ 
+   if (intersect)
+     {
+-      gegl_buffer_copy (mask_buffer,
+-                        GEGL_RECTANGLE (copy_bounds.x - mask_bounds.x,
+-                                        copy_bounds.y - mask_bounds.y,
+-                                        copy_bounds.width,
+-                                        copy_bounds.height),
+-                        GEGL_ABYSS_NONE,
+-                        buffer,
+-                        GEGL_RECTANGLE (copy_bounds.x - bounds.x,
+-                                        copy_bounds.y - bounds.y,
+-                                        copy_bounds.width,
+-                                        copy_bounds.height));
++      gimp_gegl_buffer_copy (mask_buffer,
++                             GEGL_RECTANGLE (copy_bounds.x - mask_bounds.x,
++                                             copy_bounds.y - mask_bounds.y,
++                                             copy_bounds.width,
++                                             copy_bounds.height),
++                             GEGL_ABYSS_NONE,
++                             buffer,
++                             GEGL_RECTANGLE (copy_bounds.x - bounds.x,
++                                             copy_bounds.y - bounds.y,
++                                             copy_bounds.width,
++                                             copy_bounds.height));
+     }
+ 
+   gimp_drawable_set_buffer_full (GIMP_DRAWABLE (mask),
+                                  FALSE, NULL,
+-                                 buffer, bounds.x, bounds.y);
++                                 buffer, bounds.x, bounds.y,
++                                 TRUE);
+ 
+   g_object_unref (buffer);
+ }
+@@ -2089,15 +2140,18 @@
+               x, y, width, height);
+ #endif
+ 
+-  /*  the layer stack's update signal speaks in image coordinates,
+-   *  pass to the projection as-is.
+-   */
+-  gimp_projectable_invalidate (GIMP_PROJECTABLE (group),
+-                               x, y, width, height);
++  if (! private->direct_update)
++    {
++      /*  the layer stack's update signal speaks in image coordinates,
++       *  pass to the projection as-is.
++       */
++      gimp_projectable_invalidate (GIMP_PROJECTABLE (group),
++                                   x, y, width, height);
+ 
+-  gimp_group_layer_flush (group);
++      gimp_group_layer_flush (group);
++    }
+ 
+-  if (private->pass_through)
++  if (private->direct_update || private->pass_through)
+     {
+       /*  the layer stack's update signal speaks in image coordinates,
+        *  transform to layer coordinates when emitting our own update signal.
+diff -Naur gimp-gtk3-port.a/app/core/gimpgrouplayerundo.c gimp-gtk3-port.b/app/core/gimpgrouplayerundo.c
+--- gimp-gtk3-port.a/app/core/gimpgrouplayerundo.c	2018-05-20 20:57:44.000000000 +0530
++++ gimp-gtk3-port.b/app/core/gimpgrouplayerundo.c	2019-04-11 17:57:21.486703387 +0530
+@@ -12,7 +12,7 @@
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+  */
+ 
+ #include "config.h"
+@@ -159,7 +159,8 @@
+                                              FALSE, NULL,
+                                              group_layer_undo->mask_buffer,
+                                              group_layer_undo->mask_bounds.x,
+-                                             group_layer_undo->mask_bounds.y);
++                                             group_layer_undo->mask_bounds.y,
++                                             TRUE);
+             }
+         }
+       break;
 diff -Naur gimp-gtk3-port.a/libgimpcolor/gimpcolortransform.c gimp-gtk3-port.b/libgimpcolor/gimpcolortransform.c
 --- gimp-gtk3-port.a/libgimpcolor/gimpcolortransform.c	2018-05-20 20:57:44.000000000 +0530
 +++ gimp-gtk3-port.b/libgimpcolor/gimpcolortransform.c	2019-04-11 17:33:36.379285062 +0530
