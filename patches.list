@@ -4,7 +4,7 @@ http://www.linuxfromscratch.org/patches/blfs/svn/polkit-0.115-security_patch-3.p
 http://www.linuxfromscratch.org/patches/blfs/svn/gptfdisk-1.0.4-convenience-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/parted-3.2-devmapper-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/clucene-2.3.3.4-contribs_lib-1.patch
-http://www.linuxfromscratch.org/patches/blfs/svn/glib-2.60.1-skip_warnings-1.patch
+http://www.linuxfromscratch.org/patches/blfs/svn/glib-2.60.2-skip_warnings-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/libgrss-0.7.0-bugfixes-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/libunique-1.1.6-upstream_fixes-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/ptlib-2.10.11-bison_fixes-2.patch
@@ -20,11 +20,10 @@ http://www.linuxfromscratch.org/patches/blfs/svn/clisp-2.49-readline7_fixes-1.pa
 http://www.linuxfromscratch.org/patches/blfs/svn/lua-5.3.5-shared_library-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/lua-5.2.4-shared_library-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/LWP-Protocol-https-6.07-system_certs-1.patch
-http://www.linuxfromscratch.org/patches/blfs/svn/subversion-1.11.1-apr_1.7.0_fix-1.patch
+http://www.linuxfromscratch.org/patches/blfs/svn/subversion-1.12.0-apr_1.7.0_fix-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/net-tools-CVS_20101030-remove_dups-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/rpcbind-1.2.5-vulnerability_fixes-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/wireless_tools-29-fix_iwlist_scanning-1.patch
-http://www.linuxfromscratch.org/patches/blfs/svn/glib-networking-2.60.1-upstream_fixes-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/libpcap-1.9.0-enable_bluetooth-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/fetchmail-6.3.26-disable_sslv3-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/heirloom-mailx-12.5-fixes-1.patch
@@ -32,10 +31,10 @@ http://www.linuxfromscratch.org/patches/blfs/svn/procmail-3.22-consolidated_fixe
 http://www.linuxfromscratch.org/patches/blfs/svn/httpd-2.4.39-blfs_layout-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/sendmail.8.15.2-openssl-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/openldap-2.4.47-consolidated-1.patch
-http://www.linuxfromscratch.org/patches/blfs/svn/mesa-19.0.2-add_xdemos-1.patch
+http://www.linuxfromscratch.org/patches/blfs/svn/mesa-19.0.3-add_xdemos-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/libkexiv2-18.12.2-exiv2_0.27-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/gwenview-18.12.2-exiv2_0.27-1.patch
-http://www.linuxfromscratch.org/patches/blfs/svn/evolution-3.30.5-security_fix-1.patch
+http://www.linuxfromscratch.org/patches/blfs/svn/cheese-3.32.1-gst_debug_disabled-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/abiword-3.0.2-gtk3_22_render_fix-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/abiword-3.0.2-fix_flicker-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/firefox-66.0.2-system_graphite2_harfbuzz-1.patch
