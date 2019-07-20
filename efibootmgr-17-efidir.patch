@@ -1,0 +1,131 @@
+diff -Naur efibootmgr-17.a/Make.defaults efibootmgr-17.b/Make.defaults
+--- efibootmgr-17.a/Make.defaults	2018-06-11 01:42:10.000000000 +0530
++++ efibootmgr-17.b/Make.defaults	2019-07-20 18:52:50.541382233 +0530
+@@ -16,10 +16,8 @@
+ override EXTRAINCDIR := $(foreach dir,$(EXTRAINCDIRS),-I$(dir))
+ endif
+ 
+-EFIDIR	?= $(shell x=$$(which --skip-alias --skip-functions git 2>/dev/null) ; [ -n "$$x" ] && git config --get efibootmgr.efidir)
+-ifeq ($(EFIDIR),)
+-        EFIDIR_ERROR = $(error EFIDIR or .gitconfig efibootmgr.efidir must be set to this distro's reserved EFI System Partition subdirectory name)
+-endif
++OS_VENDOR := aryalinux
++
+ EFI_LOADER := grub.efi
+ 
+ INSTALL ?= install
+@@ -42,7 +40,7 @@
+ 	-std=gnu11 -fPIC \
+ 	-D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -DLOCALEDIR=\"$(localedir)\" \
+ 	-DEFIBOOTMGR_VERSION="\"$(VERSION)\"" \
+-	-DDEFAULT_LOADER=\"\\\\EFI\\\\$(EFIDIR)\\\\$(EFI_LOADER)\" \
++	-DDEFAULT_LOADER=\"\\\\EFI\\\\$(OS_VENDOR)\\\\$(EFI_LOADER)\" \
+ 	$(if $(findstring clang,$(CC)),$(clang_cflags),) \
+ 	$(if $(findstring gcc,$(CC)),$(gcc_cflags),) \
+ 	$(call pkg-config-cflags)
+@@ -58,7 +56,4 @@
+ SOFLAGS=-shared
+ LDLIBS=$(foreach lib,$(LIBS),-l$(lib)) $(call pkg-config-ldlibs)
+ 
+-.PHONY: check_efidir_error
+-check_efidir_error : ; $(EFIDIR_ERROR) $(info Building with EFIDIR as $(EFIDIR))
+-
+ COMMIT_ID=$(shell git log -1 --pretty=%H 2>/dev/null || echo master)
+diff -Naur efibootmgr-17.a/Make.defaults.orig efibootmgr-17.b/Make.defaults.orig
+--- efibootmgr-17.a/Make.defaults.orig	1970-01-01 05:30:00.000000000 +0530
++++ efibootmgr-17.b/Make.defaults.orig	2019-07-20 18:52:31.934306344 +0530
+@@ -0,0 +1,64 @@
++NAME	= efibootmgr
++prefix	?= /usr
++libdir	?= $(prefix)/lib64
++datadir	?= $(prefix)/share
++mandir	?= $(datadir)/man
++includedir ?= $(prefix)/include
++bindir	?= $(prefix)/bin
++sbindir	?= $(prefix)/sbin
++localedir ?= $(datadir)/locale/
++PCDIR	?= $(libdir)/pkgconfig
++DESTDIR	?=
++ifneq ($(origin EXTRALIBDIRS),undefined)
++override EXTRALIBDIR := $(foreach dir,$(EXTRALIBDIRS),-L$(dir))
++endif
++ifneq ($(origin EXTRAINCDIRS),undefined)
++override EXTRAINCDIR := $(foreach dir,$(EXTRAINCDIRS),-I$(dir))
++endif
++
++EFIDIR	?= $(shell x=$$(which --skip-alias --skip-functions git 2>/dev/null) ; [ -n "$$x" ] && git config --get efibootmgr.efidir)
++ifeq ($(EFIDIR),)
++        EFIDIR_ERROR = $(error EFIDIR or .gitconfig efibootmgr.efidir must be set to this distro's reserved EFI System Partition subdirectory name)
++endif
++EFI_LOADER := grub.efi
++
++INSTALL ?= install
++CROSS_COMPILE	?=
++PKG_CONFIG = $(CROSS_COMPILE)pkg-config
++CC	:= $(if $(filter default,$(origin CC)),$(CROSS_COMPILE)gcc,$(CC))
++CCLD	:= $(if $(filter undefined,$(origin CCLD)),$(CC),$(CCLD))
++CFLAGS	?= -O2 -g -flto
++AR	:= $(CROSS_COMPILE)gcc-ar
++NM	:= $(CROSS_COMPILE)gcc-nm
++RANLIB	:= $(CROSS_COMPILE)gcc-ranlib
++
++PKGS	=
++
++SUBDIR_CFLAGS ?=
++clang_cflags =
++gcc_cflags =
++cflags	= $(EXTRALIBDIR) $(EXTRAINCDIR) $(CFLAGS) $(SUBDIR_CFLAGS) \
++	-Werror -Wall -Wextra -Wsign-compare -Wstrict-aliasing \
++	-std=gnu11 -fPIC \
++	-D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -DLOCALEDIR=\"$(localedir)\" \
++	-DEFIBOOTMGR_VERSION="\"$(VERSION)\"" \
++	-DDEFAULT_LOADER=\"\\\\EFI\\\\$(EFIDIR)\\\\$(EFI_LOADER)\" \
++	$(if $(findstring clang,$(CC)),$(clang_cflags),) \
++	$(if $(findstring gcc,$(CC)),$(gcc_cflags),) \
++	$(call pkg-config-cflags)
++clang_ccldflags =
++gcc_ccldflags = -fno-merge-constants \
++	-Wl,--fatal-warnings,--no-allow-shlib-undefined \
++	-Wl,-O2 -Wl,--no-undefined-version
++ccldflags = $(cflags) $(CCLDFLAGS) $(LDFLAGS) \
++	$(if $(findstring clang,$(CCLD)),$(clang_ccldflags),) \
++	$(if $(findstring gcc,$(CCLD)),$(gcc_ccldflags),) \
++	$(call pkg-config-ldflags)
++CPPFLAGS?=
++SOFLAGS=-shared
++LDLIBS=$(foreach lib,$(LIBS),-l$(lib)) $(call pkg-config-ldlibs)
++
++.PHONY: check_efidir_error
++check_efidir_error : ; $(EFIDIR_ERROR) $(info Building with EFIDIR as $(EFIDIR))
++
++COMMIT_ID=$(shell git log -1 --pretty=%H 2>/dev/null || echo master)
+diff -Naur efibootmgr-17.a/Makefile efibootmgr-17.b/Makefile
+--- efibootmgr-17.a/Makefile	2018-06-11 01:42:10.000000000 +0530
++++ efibootmgr-17.b/Makefile	2019-07-20 18:52:50.541382233 +0530
+@@ -8,12 +8,12 @@
+ 
+ SUBDIRS := src
+ 
+-all install deps : | check_efidir_error Make.version
++all install deps : | Make.version
+ 	@set -e ; for x in $(SUBDIRS) ; do \
+ 		$(MAKE) -C $$x $@ ; \
+ 	done
+ 
+-clean : | check_efidir_error Make.version
++clean : | Make.version
+ 	@set -e ; for x in $(SUBDIRS) ; do \
+ 		$(MAKE) -C $$x $@ ; \
+ 	done
+diff -Naur efibootmgr-17.a/src/efibootmgr.c efibootmgr-17.b/src/efibootmgr.c
+--- efibootmgr-17.a/src/efibootmgr.c	2018-06-11 01:42:10.000000000 +0530
++++ efibootmgr-17.b/src/efibootmgr.c	2019-07-20 18:54:13.053678070 +0530
+@@ -1538,7 +1538,7 @@
+ 			}
+                         /* XXX efivar-36 accidentally doesn't have a public
+                          * header for this */
+-			extern int efi_set_verbose(int verbosity, FILE *errlog);
++			extern void efi_set_verbose(int verbosity, FILE *errlog);
+ 			efi_set_verbose(opts.verbose - 2, stderr);
+ 			break;
+ 		case 'V':
