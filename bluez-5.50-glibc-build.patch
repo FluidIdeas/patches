@@ -1,0 +1,46 @@
+diff -Naur bluez-5.50.old/tools/l2test.c bluez-5.50.new/tools/l2test.c
+--- bluez-5.50.old/tools/l2test.c	2016-10-28 18:27:27.000000000 +0530
++++ bluez-5.50.new/tools/l2test.c	2019-07-21 19:29:54.144351289 +0530
+@@ -54,6 +54,10 @@
+ #define BREDR_DEFAULT_PSM	0x1011
+ #define LE_DEFAULT_PSM		0x0080
+ 
++#ifndef SIOCGSTAMP_OLD
++#define SIOCGSTAMP_OLD SIOCGSTAMP
++#endif
++
+ /* Test modes */
+ enum {
+ 	SEND,
+@@ -906,7 +910,7 @@
+ 			if (timestamp) {
+ 				struct timeval tv;
+ 
+-				if (ioctl(sk, SIOCGSTAMP, &tv) < 0) {
++				if (ioctl(sk, SIOCGSTAMP_OLD, &tv) < 0) {
+ 					timestamp = 0;
+ 					memset(ts, 0, sizeof(ts));
+ 				} else {
+diff -Naur bluez-5.50.old/tools/rctest.c bluez-5.50.new/tools/rctest.c
+--- bluez-5.50.old/tools/rctest.c	2015-09-04 06:49:36.000000000 +0530
++++ bluez-5.50.new/tools/rctest.c	2019-07-21 19:29:30.928379311 +0530
+@@ -49,6 +49,10 @@
+ 
+ #include "src/shared/util.h"
+ 
++#ifndef SIOCGSTAMP_OLD
++#define SIOCGSTAMP_OLD SIOCGSTAMP
++#endif
++
+ /* Test modes */
+ enum {
+ 	SEND,
+@@ -504,7 +508,7 @@
+ 			if (timestamp) {
+ 				struct timeval tv;
+ 
+-				if (ioctl(sk, SIOCGSTAMP, &tv) < 0) {
++				if (ioctl(sk, SIOCGSTAMP_OLD, &tv) < 0) {
+ 					timestamp = 0;
+ 					memset(ts, 0, sizeof(ts));
+ 				} else {
