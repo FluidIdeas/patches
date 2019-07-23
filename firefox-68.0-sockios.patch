@@ -1,0 +1,10 @@
+--- firefox-68.0/media/webrtc/trunk/webrtc/rtc_base/physicalsocketserver.cc	2019-07-06 07:18:36.000000000 +0530
++++ firefox-68.0.b/media/webrtc/trunk/webrtc/rtc_base/physicalsocketserver.cc	2019-07-23 10:25:34.864511461 +0530
+@@ -30,6 +30,7 @@
+ #include <sys/select.h>
+ #include <unistd.h>
+ #include <signal.h>
++#include <linux/sockios.h>
+ #endif
+ 
+ #if defined(WEBRTC_WIN)
