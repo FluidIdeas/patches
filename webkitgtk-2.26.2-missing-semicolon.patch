@@ -1,0 +1,12 @@
+diff -Naur webkitgtk-2.26.2.a/Source/WTF/wtf/URLHelpers.cpp webkitgtk-2.26.2.b/Source/WTF/wtf/URLHelpers.cpp
+--- webkitgtk-2.26.2.a/Source/WTF/wtf/URLHelpers.cpp	2019-08-28 17:16:29.000000000 +0530
++++ webkitgtk-2.26.2.b/Source/WTF/wtf/URLHelpers.cpp	2019-12-24 11:59:57.212624023 +0530
+@@ -301,7 +301,7 @@
+     Optional<UChar32> previousCodePoint;
+     while (i < length) {
+         UChar32 c;
+-        U16_NEXT(buffer, i, length, c)
++        U16_NEXT(buffer, i, length, c);
+         UErrorCode error = U_ZERO_ERROR;
+         UScriptCode script = uscript_getScript(c, &error);
+         if (error != U_ZERO_ERROR) {
