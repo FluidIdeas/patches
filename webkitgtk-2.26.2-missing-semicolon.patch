@@ -1,6 +1,33 @@
+diff -Naur webkitgtk-2.26.2.a/Source/WebCore/dom/Document.cpp webkitgtk-2.26.2.b/Source/WebCore/dom/Document.cpp
+--- webkitgtk-2.26.2.a/Source/WebCore/dom/Document.cpp	2019-09-02 15:11:47.000000000 +0530
++++ webkitgtk-2.26.2.b/Source/WebCore/dom/Document.cpp	2019-12-24 12:24:36.982216403 +0530
+@@ -4944,12 +4944,12 @@
+     unsigned i = 0;
+ 
+     UChar32 c;
+-    U16_NEXT(characters, i, length, c)
++    U16_NEXT(characters, i, length, c);
+     if (!isValidNameStart(c))
+         return false;
+ 
+     while (i < length) {
+-        U16_NEXT(characters, i, length, c)
++        U16_NEXT(characters, i, length, c);
+         if (!isValidNamePart(c))
+             return false;
+     }
+@@ -5009,7 +5009,7 @@
+ 
+     for (unsigned i = 0; i < length; ) {
+         UChar32 c;
+-        U16_NEXT(qualifiedName, i, length, c)
++        U16_NEXT(qualifiedName, i, length, c);
+         if (c == ':') {
+             if (sawColon)
+                 return Exception { InvalidCharacterError };
 diff -Naur webkitgtk-2.26.2.a/Source/WTF/wtf/URLHelpers.cpp webkitgtk-2.26.2.b/Source/WTF/wtf/URLHelpers.cpp
 --- webkitgtk-2.26.2.a/Source/WTF/wtf/URLHelpers.cpp	2019-08-28 17:16:29.000000000 +0530
-+++ webkitgtk-2.26.2.b/Source/WTF/wtf/URLHelpers.cpp	2019-12-24 11:59:57.212624023 +0530
++++ webkitgtk-2.26.2.b/Source/WTF/wtf/URLHelpers.cpp	2019-12-24 12:21:38.704984771 +0530
 @@ -301,7 +301,7 @@
      Optional<UChar32> previousCodePoint;
      while (i < length) {
