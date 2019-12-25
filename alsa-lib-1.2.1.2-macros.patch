@@ -1,0 +1,42 @@
+diff -Naur alsa-lib-1.2.1.2.a/include/sound/hdsp.h alsa-lib-1.2.1.2.b/include/sound/hdsp.h
+--- alsa-lib-1.2.1.2.a/include/sound/hdsp.h	2019-12-25 19:00:22.073436147 +0530
++++ alsa-lib-1.2.1.2.b/include/sound/hdsp.h	2019-12-25 19:01:20.537263383 +0530
+@@ -71,33 +71,33 @@
+ 	unsigned char analog_extension_board;
+ };
+ 
+-#define SNDRV_HDSP_IOCTL_GET_CONFIG_INFO _IOR('H', 0x41, struct hdsp_config_info)
++#define SNDRV_HDSP_IOCTL_GET_CONFIG_INFO _IOR('H', 0x41, struct hdsp_config_info);
+ 
+ struct hdsp_firmware {
+ 	void __user *firmware_data;	/* 24413 x 4 bytes */
+ };
+ 
+-#define SNDRV_HDSP_IOCTL_UPLOAD_FIRMWARE _IOW('H', 0x42, struct hdsp_firmware)
++#define SNDRV_HDSP_IOCTL_UPLOAD_FIRMWARE _IOW('H', 0x42, struct hdsp_firmware);
+ 
+ struct hdsp_version {
+ 	enum HDSP_IO_Type io_type;
+ 	unsigned short firmware_rev;
+ };
+ 
+-#define SNDRV_HDSP_IOCTL_GET_VERSION _IOR('H', 0x43, struct hdsp_version)
++#define SNDRV_HDSP_IOCTL_GET_VERSION _IOR('H', 0x43, struct hdsp_version);
+ 
+ struct hdsp_mixer {
+ 	unsigned short matrix[HDSP_MATRIX_MIXER_SIZE];
+ };
+ 
+-#define SNDRV_HDSP_IOCTL_GET_MIXER _IOR('H', 0x44, struct hdsp_mixer)
++#define SNDRV_HDSP_IOCTL_GET_MIXER _IOR('H', 0x44, struct hdsp_mixer);
+ 
+ struct hdsp_9632_aeb {
+ 	int aebi;
+ 	int aebo;
+ };
+ 
+-#define SNDRV_HDSP_IOCTL_GET_9632_AEB _IOR('H', 0x45, struct hdsp_9632_aeb)
++#define SNDRV_HDSP_IOCTL_GET_9632_AEB _IOR('H', 0x45, struct hdsp_9632_aeb);
+ 
+ /* typedefs for compatibility to user-space */
+ typedef enum HDSP_IO_Type HDSP_IO_Type;
