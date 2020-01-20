@@ -1,0 +1,21 @@
+---
+ net/hsr/hsr_main.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/net/hsr/hsr_main.h b/net/hsr/hsr_main.h
+index d40de84..754d84b 100644
+--- a/net/hsr/hsr_main.h
++++ b/net/hsr/hsr_main.h
+@@ -191,7 +191,7 @@ static inline u16 hsr_get_skb_sequence_nr(struct sk_buff *skb)
+ void hsr_debugfs_create_root(void);
+ void hsr_debugfs_remove_root(void);
+ #else
+-static inline void void hsr_debugfs_rename(struct net_device *dev)
++static inline void hsr_debugfs_rename(struct net_device *dev)
+ {
+ }
+ static inline void hsr_debugfs_init(struct hsr_priv *priv,
+-- 
+1.8.3.1
+
+  
