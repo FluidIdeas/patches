@@ -1,5 +1,5 @@
 http://www.linuxfromscratch.org/patches/blfs/svn/liboauth-1.0.3-openssl-1.1.0-3.patch
-http://www.linuxfromscratch.org/patches/blfs/svn/nss-3.49.1-standalone-1.patch
+http://www.linuxfromscratch.org/patches/blfs/svn/nss-3.49.2-standalone-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/gptfdisk-1.0.4-convenience-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/clucene-2.3.3.4-contribs_lib-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/glib-2.62.4-skip_warnings-1.patch
@@ -28,13 +28,12 @@ http://www.linuxfromscratch.org/patches/blfs/svn/procmail-3.22-consolidated_fixe
 http://www.linuxfromscratch.org/patches/blfs/svn/httpd-2.4.41-blfs_layout-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/postfix-3.4.8-glibc230_fix-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/sendmail.8.15.2-openssl-1.patch
-http://www.linuxfromscratch.org/patches/blfs/svn/openldap-2.4.48-consolidated-1.patch
-http://www.linuxfromscratch.org/patches/blfs/svn/mesa-19.3.2-add_xdemos-1.patch
-http://www.linuxfromscratch.org/patches/blfs/svn/qt-5.14.0-qtwayland_cursor_fix-1.patch
+http://www.linuxfromscratch.org/patches/blfs/svn/openldap-2.4.49-consolidated-1.patch
+http://www.linuxfromscratch.org/patches/blfs/svn/mesa-19.3.3-fix_svga_vmwgfx_segfaults-1.patch
+http://www.linuxfromscratch.org/patches/blfs/svn/mesa-19.3.3-add_xdemos-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/konsole-19.08.3-scrollbar-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/tracker-miners-2.3.1-upstream_fixes-1.patch
-http://www.linuxfromscratch.org/patches/blfs/svn/mutter-3.34.1-upstream_fixes-1.patch
-http://www.linuxfromscratch.org/patches/blfs/svn/firefox-68.4.1esr-system_graphite2_harfbuzz-1.patch
+http://www.linuxfromscratch.org/patches/blfs/svn/firefox-68.4.2esr-system_graphite2_harfbuzz-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/inkscape-0.92.4-use_versioned_ImageMagick6-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/inkscape-0.92.4-upstream_fixes-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/inkscape-0.92.4-poppler_0_83_0_fixes-1.patch
