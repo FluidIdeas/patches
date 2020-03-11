@@ -1,5 +1,5 @@
 http://www.linuxfromscratch.org/patches/blfs/svn/liboauth-1.0.3-openssl-1.1.0-3.patch
-http://www.linuxfromscratch.org/patches/blfs/svn/nss-3.50-standalone-1.patch
+http://www.linuxfromscratch.org/patches/blfs/svn/nss-3.51-standalone-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/gptfdisk-1.0.5-convenience-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/clucene-2.3.3.4-contribs_lib-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/glib-2.64.0-skip_warnings-1.patch
@@ -30,7 +30,7 @@ http://www.linuxfromscratch.org/patches/blfs/svn/httpd-2.4.41-blfs_layout-1.patc
 http://www.linuxfromscratch.org/patches/blfs/svn/postfix-3.4.8-glibc230_fix-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/sendmail.8.15.2-openssl-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/openldap-2.4.49-consolidated-1.patch
-http://www.linuxfromscratch.org/patches/blfs/svn/mesa-20.0.0-add_xdemos-1.patch
+http://www.linuxfromscratch.org/patches/blfs/svn/mesa-20.0.1-add_xdemos-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/cogl-1.22.4-mesa_20_fixes-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/kdenlive-19.12.2-segfault_fix-1.patch
 http://www.linuxfromscratch.org/patches/blfs/svn/konsole-19.12.2-scrollbar-1.patch
